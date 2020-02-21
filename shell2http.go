@@ -54,7 +54,7 @@ const (
 const INDEXHTML = `<!DOCTYPE html>
 <html>
 <head>
-    <title>❯ shell2http</title>
+    <title>%s</title>
     <style>
     body {
         font-family: sans-serif;
@@ -69,11 +69,10 @@ const INDEXHTML = `<!DOCTYPE html>
     </style>
 </head>
 <body>
-	<h1>shell2http</h1>
+	<h1>%s</h1>
 	<ul>
 		%s
 	</ul>
-	Get from: <a href="https://github.com/msoap/shell2http">github.com/msoap/shell2http</a>
 </body>
 </html>
 `
@@ -90,6 +89,7 @@ type Command struct {
 
 // Config - config struct
 type Config struct {
+	title         string // page title
 	port          int    // server port
 	cache         int    // caching command out (in seconds)
 	timeout       int    // timeout for shell command (in seconds)
@@ -156,6 +156,7 @@ func getConfig() (cmdHandlers []Command, appConfig Config, err error) {
 	}
 
 	flag.StringVar(&logFilename, "log", "", "log filename, default - STDOUT")
+	flag.StringVar(&appConfig.title, "title", "", "page title, default - http2shell")
 	flag.IntVar(&appConfig.port, "port", PORT, "port for http server")
 	flag.StringVar(&appConfig.host, "host", "", "host for http server")
 	flag.BoolVar(&appConfig.setCGI, "cgi", false, "run scripts in CGI-mode")
@@ -195,6 +196,10 @@ func getConfig() (cmdHandlers []Command, appConfig Config, err error) {
 			return nil, Config{}, fmt.Errorf("error opening log file: %v", err)
 		}
 		log.SetOutput(fhLog)
+	}
+
+	if appConfig.title == `` {
+		appConfig.title = `http2shell`
 	}
 
 	if len(appConfig.cert) > 0 && len(appConfig.key) == 0 ||
@@ -484,7 +489,7 @@ func setupHandlers(cmdHandlers []Command, appConfig Config, cacheTTL raphanus.DB
 
 	// --------------
 	if !appConfig.noIndex && !existsRootPath {
-		indexHTML := fmt.Sprintf(INDEXHTML, indexLiHTML)
+		indexHTML := fmt.Sprintf(INDEXHTML, appConfig.title, appConfig.title, indexLiHTML)
 		resultHandlers = append(resultHandlers, Command{
 			path: "/",
 			cmd:  "index page",
